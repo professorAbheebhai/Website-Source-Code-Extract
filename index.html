@@ -1,484 +1,1041 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ProxAbhee:~# Advanced Source Extractor</title>
-  <link href="https://fonts.googleapis.com/css2?family=Ubuntu+Mono&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --primary: #00ff9d;
-      --secondary: #00bfff;
-      --accent: #ff2d75;
-      --bg: #0a0a0a;
-      --terminal-bg: #000000;
-    }
-    
-    body {
-      background: var(--bg);
-      color: var(--primary);
-      font-family: 'Ubuntu Mono', monospace;
-      margin: 0;
-      padding: 0;
-      overflow-x: hidden;
-      background-image: 
-        radial-gradient(circle at 25% 25%, rgba(0, 255, 157, 0.05) 0%, transparent 50%),
-        radial-gradient(circle at 75% 75%, rgba(0, 191, 255, 0.05) 0%, transparent 50%);
-    }
-    
-    h1 {
-      text-align: center;
-      color: var(--primary);
-      font-size: 2.2rem;
-      margin: 20px 0;
-      text-shadow: 0 0 10px var(--primary);
-      position: relative;
-      display: inline-block;
-      left: 50%;
-      transform: translateX(-50%);
-    }
-    
-    h1::after {
-      content: '';
-      position: absolute;
-      width: 100%;
-      height: 3px;
-      bottom: -10px;
-      left: 0;
-      background: linear-gradient(90deg, transparent, var(--primary), transparent);
-      animation: titleUnderline 3s infinite;
-    }
-    
-    @keyframes titleUnderline {
-      0% { background-position: -100% 0; }
-      100% { background-position: 100% 0; }
-    }
-    
-    .container {
-      width: 85%;
-      max-width: 1100px;
-      margin: 30px auto;
-      padding: 25px;
-      background: rgba(10, 10, 10, 0.8);
-      border: 1px solid var(--primary);
-      border-radius: 8px;
-      box-shadow: 0 0 25px rgba(0, 255, 157, 0.3);
-      backdrop-filter: blur(5px);
-      position: relative;
-      overflow: hidden;
-    }
-    
-    .container::before {
-      content: '';
-      position: absolute;
-      top: -50%;
-      left: -50%;
-      width: 200%;
-      height: 200%;
-      background: linear-gradient(
-        to bottom right,
-        transparent 0%,
-        transparent 45%,
-        rgba(0, 255, 157, 0.03) 50%,
-        transparent 55%,
-        transparent 100%
-      );
-      animation: scan 8s linear infinite;
-      pointer-events: none;
-    }
-    
-    @keyframes scan {
-      0% { transform: translateY(0) translateX(0); }
-      100% { transform: translateY(-100%) translateX(-100%); }
-    }
-    
-    .input-group {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    
-    input[type="text"] {
-      flex: 1;
-      padding: 12px 15px;
-      font-size: 1rem;
-      background: rgba(0, 0, 0, 0.7);
-      color: var(--primary);
-      border: 1px solid var(--secondary);
-      border-radius: 5px;
-      outline: none;
-      font-family: 'Ubuntu Mono', monospace;
-      transition: all 0.3s;
-    }
-    
-    input[type="text"]:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 10px rgba(0, 255, 157, 0.5);
-    }
-    
-    .terminal {
-      background: var(--terminal-bg);
-      border: 1px solid var(--secondary);
-      border-radius: 5px;
-      padding: 20px;
-      height: 500px;
-      overflow-y: auto;
-      color: var(--primary);
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      font-size: 1rem;
-      line-height: 1.6;
-      position: relative;
-      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.5);
-    }
-    
-    .terminal::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 15px;
-      background: linear-gradient(to bottom, rgba(0, 255, 157, 0.2), transparent);
-    }
-    
-    .prompt {
-      color: var(--accent);
-    }
-    
-    .cursor {
-      display: inline-block;
-      width: 10px;
-      height: 20px;
-      background: var(--accent);
-      animation: blink 1s infinite, pulse 2s infinite;
-      vertical-align: middle;
-    }
-    
-    @keyframes blink {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0; }
-    }
-    
-    @keyframes pulse {
-      0%, 100% { box-shadow: 0 0 5px var(--accent); }
-      50% { box-shadow: 0 0 15px var(--accent); }
-    }
-    
-    .btn-group {
-      display: flex;
-      justify-content: center;
-      gap: 15px;
-      margin-top: 20px;
-      flex-wrap: wrap;
-    }
-    
-    button {
-      padding: 12px 25px;
-      font-size: 1rem;
-      background: linear-gradient(135deg, var(--primary), var(--secondary));
-      color: #000;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: all 0.3s;
-      font-family: 'Ubuntu Mono', monospace;
-      font-weight: bold;
-      position: relative;
-      overflow: hidden;
-      z-index: 1;
-    }
-    
-    button::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-      transition: 0.5s;
-      z-index: -1;
-    }
-    
-    button:hover::before {
-      left: 100%;
-    }
-    
-    button:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 5px 15px rgba(0, 255, 157, 0.4);
-    }
-    
-    button:active {
-      transform: translateY(1px);
-    }
-    
-    footer {
-      text-align: center;
-      padding: 30px 0;
-      margin-top: 40px;
-      border-top: 1px solid rgba(0, 191, 255, 0.2);
-      position: relative;
-    }
-    
-    footer::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--secondary), transparent);
-    }
-    
-    .social-links {
-      display: flex;
-      justify-content: center;
-      gap: 25px;
-      margin-top: 15px;
-    }
-    
-    .social-link {
-      color: var(--primary);
-      text-decoration: none;
-      font-size: 0.9rem;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    
-    .social-link:hover {
-      color: var(--accent);
-      text-shadow: 0 0 10px var(--accent);
-    }
-    
-    .typing {
-      border-right: 2px solid var(--accent);
-      animation: typingCursor 0.7s infinite;
-    }
-    
-    @keyframes typingCursor {
-      0%, 100% { border-color: transparent; }
-      50% { border-color: var(--accent); }
-    }
-    
-    /* Scrollbar styling */
-    ::-webkit-scrollbar {
-      width: 8px;
-    }
-    
-    ::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.3);
-    }
-    
-    ::-webkit-scrollbar-thumb {
-      background: var(--secondary);
-      border-radius: 4px;
-    }
-    
-    ::-webkit-scrollbar-thumb:hover {
-      background: var(--primary);
-    }
-    
-    /* Responsive adjustments */
-    @media (max-width: 768px) {
-      .container {
-        width: 95%;
-        padding: 15px;
-      }
-      
-      .terminal {
-        height: 400px;
-      }
-      
-      .btn-group {
-        flex-direction: column;
-        align-items: center;
-      }
-      
-      button {
-        width: 100%;
-        max-width: 250px;
-      }
-    }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ProxAbhee · Multi-Tool Professional Suite</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+    <style>
+        /* ── ROOT ── */
+        :root {
+            --bg: #ffffff;
+            --bg-secondary: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --text-muted: #94a3b8;
+            --accent: #2563eb;
+            --accent-light: #3b82f6;
+            --accent-glow: rgba(37, 99, 235, 0.15);
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --radius-xl: 20px;
+            --radius-lg: 14px;
+            --radius-md: 10px;
+            --radius-pill: 50px;
+            --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+            --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+            --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.12);
+            --transition: 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        /* ── RESET ── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: var(--font-sans);
+            background: var(--bg-secondary);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── ANIMATED BG SHAPES ── */
+        .bg-shapes {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+        .bg-shape {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(70px);
+            opacity: 0.07;
+            animation: floatShape 12s infinite alternate ease-in-out;
+        }
+        .bg-shape:nth-child(1) {
+            width: 500px;
+            height: 500px;
+            background: #2563eb;
+            top: -150px;
+            left: -100px;
+        }
+        .bg-shape:nth-child(2) {
+            width: 400px;
+            height: 400px;
+            background: #8b5cf6;
+            bottom: -120px;
+            right: -80px;
+            animation-delay: -5s;
+        }
+        .bg-shape:nth-child(3) {
+            width: 350px;
+            height: 350px;
+            background: #06b6d4;
+            top: 50%;
+            left: 70%;
+            animation-delay: -10s;
+        }
+        @keyframes floatShape {
+            0% {
+                transform: translate(0, 0) scale(1);
+            }
+            100% {
+                transform: translate(50px, -40px) scale(1.1);
+            }
+        }
+
+        /* ── APP CONTAINER ── */
+        .app {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+
+        /* ── HEADER ── */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 1rem 1.8rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+            backdrop-filter: blur(20px);
+            animation: slideDown 0.6s ease;
+            position: relative;
+            z-index: 10;
+        }
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--accent);
+            letter-spacing: -0.02em;
+        }
+        .logo i {
+            font-size: 1.4rem;
+            background: var(--accent);
+            color: white;
+            border-radius: 10px;
+            padding: 0.4rem;
+        }
+        .nav-links {
+            display: flex;
+            gap: 1.8rem;
+            list-style: none;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            cursor: pointer;
+        }
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--accent);
+        }
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0.5rem;
+        }
+        .hamburger span {
+            width: 25px;
+            height: 3px;
+            background: var(--text);
+            border-radius: 3px;
+            transition: 0.3s;
+        }
+        .hamburger.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+        .hamburger.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -6px);
+        }
+
+        /* ── MOBILE SIDEBAR ── */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -280px;
+            width: 260px;
+            height: 100%;
+            background: var(--card-bg);
+            box-shadow: var(--shadow-lg);
+            z-index: 20;
+            transition: right 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+            padding: 2rem 1.5rem;
+            border-left: 1px solid var(--border);
+        }
+        .sidebar.open {
+            right: 0;
+        }
+        .sidebar .close-btn {
+            text-align: right;
+            margin-bottom: 2rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+        .sidebar a {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.8rem 0;
+            color: var(--text);
+            font-weight: 500;
+            text-decoration: none;
+            border-bottom: 1px solid var(--border);
+            transition: 0.2s;
+            cursor: pointer;
+        }
+        .sidebar a:hover {
+            color: var(--accent);
+        }
+
+        /* ── TOOL CARDS GRID ── */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+        .tool-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-xl);
+            padding: 1.8rem;
+            transition: var(--transition);
+            cursor: pointer;
+            box-shadow: var(--shadow-sm);
+            animation: fadeUp 0.6s ease backwards;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.8rem;
+        }
+        .tool-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+        .tool-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+        .tool-card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+        .tool-card:nth-child(4) {
+            animation-delay: 0.4s;
+        }
+        @keyframes fadeUp {
+            from {
+                opacity: 0;
+                transform: translateY(25px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .tool-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg), 0 0 0 2px var(--accent-glow);
+            border-color: var(--accent-light);
+        }
+        .tool-card i {
+            font-size: 2rem;
+            color: var(--accent);
+            background: var(--accent-glow);
+            padding: 0.7rem;
+            border-radius: 14px;
+        }
+        .tool-card h3 {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        .tool-card p {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        /* ── TOOL PANELS ── */
+        .tool-panel {
+            background: var(--card-bg);
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--border);
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            display: none;
+            animation: fadeUp 0.5s ease;
+        }
+        .tool-panel.active {
+            display: block;
+        }
+        .tool-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            font-size: 1.2rem;
+            color: var(--accent);
+        }
+        .input-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.2rem;
+        }
+        .input-group input {
+            flex: 1;
+            padding: 0.8rem 1.2rem;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-pill);
+            font-size: 0.9rem;
+            background: #fff;
+            outline: none;
+            transition: 0.2s;
+            font-family: var(--font-sans);
+            min-width: 180px;
+        }
+        .input-group input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 4px var(--accent-glow);
+        }
+        .btn {
+            padding: 0.8rem 2rem;
+            border: none;
+            border-radius: var(--radius-pill);
+            background: var(--accent);
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            white-space: nowrap;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+        .btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+        }
+        .btn:active {
+            transform: scale(0.96);
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-outline {
+            background: transparent;
+            border: 1px solid var(--border);
+            color: var(--text);
+            box-shadow: none;
+            padding: 0.6rem 1.2rem;
+            font-size: 0.8rem;
+        }
+        .btn-outline:hover {
+            background: #f1f5f9;
+            transform: none;
+            box-shadow: none;
+        }
+        .spinner {
+            display: none;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+        .btn.loading .spinner {
+            display: inline-block;
+        }
+        .btn.loading .btn-text {
+            display: none;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .status {
+            font-size: 0.85rem;
+            margin: 0.5rem 0 0.8rem 0;
+            color: var(--text-secondary);
+            min-height: 1.4rem;
+        }
+        .status.error {
+            color: var(--danger);
+        }
+        .status.success {
+            color: var(--success);
+        }
+        .status.warning {
+            color: var(--warning);
+        }
+
+        .result-box {
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: var(--radius-lg);
+            padding: 1.2rem;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            min-height: 200px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
+            position: relative;
+            border: 1px solid #1e293b;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.4);
+        }
+        .result-box .empty-hint {
+            color: #64748b;
+            font-family: var(--font-sans);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            min-height: 160px;
+        }
+        .result-box .empty-hint i {
+            margin-right: 8px;
+            opacity: 0.6;
+        }
+
+        .result-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: white;
+            border: 1px solid var(--border);
+            padding: 0.8rem 1.8rem;
+            border-radius: var(--radius-pill);
+            box-shadow: var(--shadow-lg);
+            z-index: 50;
+            opacity: 0;
+            transition: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .nav-links {
+                display: none;
+            }
+            .hamburger {
+                display: flex;
+            }
+            .tools-grid {
+                grid-template-columns: 1fr;
+            }
+            .input-group {
+                flex-direction: column;
+            }
+            .input-group input {
+                min-width: unset;
+            }
+            .tool-panel {
+                padding: 1.2rem;
+            }
+            .header {
+                padding: 0.8rem 1.2rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .app {
+                padding: 0.8rem;
+            }
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+            .result-actions .btn {
+                width: auto;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>ProxAbhee:~# Advanced Source Extractor</h1>
-  <div class="container">
-    <div class="input-group">
-      <input type="text" id="url" placeholder="Enter target URL (e.g., https://example.com)" autocomplete="off">
-    </div>
-    
-    <div class="terminal" id="output">
-      <span class="prompt">ProxAbhee:~# </span><span id="typing-text"></span><span class="cursor"></span>
-    </div>
-    
-    <div class="btn-group">
-      <button onclick="fetchSourceCode()">Fetch Source</button>
-      <button onclick="copyToClipboard()">Copy to Clipboard</button>
-      <button onclick="downloadSourceCode()">Download</button>
-      <button onclick="clearTerminal()">Clear Terminal</button>
-    </div>
-  </div>
 
-  <footer>
-    <div class="social-links">
-      <a href="https://short-link.me/rwiixjaan" class="social-link" target="_blank">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right:5px;">
-          <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
-        </svg>
-        WhatsApp Channel
-      </a>
-      <a href="https://t.me/+koSxIhaaGLNhYzY0" class="social-link" target="_blank">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right:5px;">
-          <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.14-.26.26-.429.26l.213-3.053 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.941z"/>
-        </svg>
-        Telegram
-      </a>
+    <!-- ─── BACKGROUND SHAPES ─── -->
+    <div class="bg-shapes">
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
+        <div class="bg-shape"></div>
     </div>
-  </footer>
 
-  <script>
-    // Typing animation for initial text
-    const typingText = document.getElementById('typing-text');
-    const messages = [
-      "Initializing source extractor...",
-      "Checking system dependencies...",
-      "Establishing secure connection...",
-      "Ready to extract source code."
-    ];
-    
-    let messageIndex = 0;
-    let charIndex = 0;
-    let isDeleting = false;
-    
-    function typeWriter() {
-      const currentMessage = messages[messageIndex];
-      
-      if (isDeleting) {
-        typingText.textContent = currentMessage.substring(0, charIndex - 1);
-        charIndex--;
-      } else {
-        typingText.textContent = currentMessage.substring(0, charIndex + 1);
-        charIndex++;
-      }
-      
-      if (!isDeleting && charIndex === currentMessage.length) {
-        isDeleting = true;
-        setTimeout(typeWriter, 1500);
-      } else if (isDeleting && charIndex === 0) {
-        isDeleting = false;
-        messageIndex = (messageIndex + 1) % messages.length;
-        setTimeout(typeWriter, 300);
-      } else {
-        const speed = isDeleting ? 50 : Math.random() * 100 + 50;
-        setTimeout(typeWriter, speed);
-      }
-    }
-    
-    // Start typing animation
-    setTimeout(typeWriter, 1000);
-    
-    // Terminal functions
-    function fetchSourceCode() {
-      const url = document.getElementById('url').value;
-      const output = document.getElementById('output');
-      
-      if (!url) {
-        addOutput('⚠️ Error: No URL provided!', 'error');
-        return;
-      }
-      
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        addOutput('⚠️ Error: URL must start with http:// or https://', 'error');
-        return;
-      }
-      
-      addOutput(`⏳ Fetching source code from: ${url}`, 'system');
-      
-      fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(url))
-        .then(response => response.json())
-        .then(data => {
-          if (data.contents) {
-            const content = escapeHtml(data.contents);
-            addOutput(content, 'success');
-          } else {
-            addOutput('❌ Error: No content received from target', 'error');
-          }
-        })
-        .catch(error => {
-          addOutput(`❌ Error fetching source code: ${error.message}`, 'error');
-          console.error('Error:', error);
-        });
-    }
-    
-    function addOutput(text, type = 'normal') {
-      const output = document.getElementById('output');
-      const prompt = `<span class="prompt">ProxAbhee:~# </span>`;
-      let styledText = text;
-      
-      if (type === 'error') {
-        styledText = `<span style="color: #ff2d75;">${text}</span>`;
-      } else if (type === 'system') {
-        styledText = `<span style="color: #00bfff;">${text}</span>`;
-      } else if (type === 'success') {
-        styledText = `<span style="color: #00ff9d;">${text}</span>`;
-      }
-      
-      output.innerHTML += `${prompt}${styledText}<br><span class="cursor"></span>`;
-      output.scrollTop = output.scrollHeight;
-    }
-    
-    function escapeHtml(text) {
-      return text.replace(/&/g, "&amp;")
-                 .replace(/</g, "&lt;")
-                 .replace(/>/g, "&gt;")
-                 .replace(/"/g, "&quot;")
-                 .replace(/'/g, "&#039;");
-    }
-    
-    function copyToClipboard() {
-      const output = document.getElementById('output').innerText;
-      const cleanOutput = output.replace(/ProxAbhee:~#\s/g, '');
-      
-      navigator.clipboard.writeText(cleanOutput).then(() => {
-        addOutput('✅ Source code copied to clipboard!', 'success');
-      }).catch(err => {
-        addOutput('❌ Failed to copy to clipboard', 'error');
-        console.error('Error:', err);
-      });
-    }
-    
-    function downloadSourceCode() {
-      const output = document.getElementById('output').innerText;
-      const cleanOutput = output.replace(/ProxAbhee:~#\s/g, '');
-      
-      if (!cleanOutput.trim()) {
-        addOutput('⚠️ Error: No content to download', 'error');
-        return;
-      }
-      
-      const blob = new Blob([cleanOutput], { type: 'text/plain' });
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = `source-code-${new Date().toISOString().slice(0,10)}.txt`;
-      link.click();
-      addOutput('💾 Source code downloaded', 'success');
-    }
-    
-    function clearTerminal() {
-      document.getElementById('output').innerHTML = '<span class="cursor"></span>';
-    }
-    
-    // Handle Enter key press in URL input
-    document.getElementById('url').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        fetchSourceCode();
-      }
-    });
-  </script>
+    <!-- ─── APP ─── -->
+    <div class="app">
+
+        <!-- HEADER -->
+        <header class="header">
+            <div class="logo">
+                <i class="fas fa-bolt"></i> ProxAbhee Tools
+            </div>
+            <ul class="nav-links" id="navLinks">
+                <li><a class="active" data-tool="home"><i class="fas fa-home"></i> Home</a></li>
+                <li><a data-tool="source"><i class="fas fa-code"></i> Source</a></li>
+                <li><a data-tool="social"><i class="fas fa-share-alt"></i> Social</a></li>
+                <li><a data-tool="headers"><i class="fas fa-server"></i> Headers</a></li>
+                <li><a data-tool="seo"><i class="fas fa-search"></i> SEO</a></li>
+            </ul>
+            <button class="hamburger" id="hamburgerBtn" aria-label="Toggle menu">
+                <span></span><span></span><span></span>
+            </button>
+        </header>
+
+        <!-- MOBILE SIDEBAR -->
+        <div class="sidebar" id="sidebar">
+            <div class="close-btn" id="closeSidebar">&times;</div>
+            <a data-tool="home"><i class="fas fa-home"></i> Home</a>
+            <a data-tool="source"><i class="fas fa-code"></i> Source Viewer</a>
+            <a data-tool="social"><i class="fas fa-share-alt"></i> Social Preview</a>
+            <a data-tool="headers"><i class="fas fa-server"></i> Headers Check</a>
+            <a data-tool="seo"><i class="fas fa-search"></i> SEO Analyzer</a>
+        </div>
+
+        <!-- ─── HOME / TOOL CARDS ─── -->
+        <div class="tools-grid" id="homeSection">
+            <div class="tool-card" data-tool="source">
+                <i class="fas fa-code"></i>
+                <h3>Source Code Viewer</h3>
+                <p>Fetch and view the full source of any webpage.</p>
+            </div>
+            <div class="tool-card" data-tool="social">
+                <i class="fas fa-share-alt"></i>
+                <h3>Social Preview</h3>
+                <p>See how your link appears on social media.</p>
+            </div>
+            <div class="tool-card" data-tool="headers">
+                <i class="fas fa-server"></i>
+                <h3>HTTP Headers Check</h3>
+                <p>Inspect response headers of any URL.</p>
+            </div>
+            <div class="tool-card" data-tool="seo">
+                <i class="fas fa-search"></i>
+                <h3>SEO Meta Analyzer</h3>
+                <p>Check title, description, OG tags and more.</p>
+            </div>
+        </div>
+
+        <!-- ─── TOOL PANELS ─── -->
+
+        <!-- SOURCE VIEWER -->
+        <div class="tool-panel" id="sourcePanel">
+            <div class="tool-header"><i class="fas fa-code"></i> Source Code Viewer</div>
+            <div class="input-group">
+                <input type="url" id="sourceUrl" placeholder="https://example.com" />
+                <button class="btn" id="sourceBtn"><span class="btn-text">Fetch Source</span><span class="spinner"></span></button>
+            </div>
+            <div class="status" id="sourceStatus"></div>
+            <div class="result-box" id="sourceResult"><div class="empty-hint"><i class="fas fa-globe"></i> Enter a URL and click "Fetch Source"</div></div>
+            <div class="result-actions">
+                <button class="btn btn-outline" id="sourceCopy"><i class="fas fa-copy"></i> Copy</button>
+                <button class="btn btn-outline" id="sourceDownload"><i class="fas fa-download"></i> Download</button>
+            </div>
+        </div>
+
+        <!-- SOCIAL PREVIEW -->
+        <div class="tool-panel" id="socialPanel">
+            <div class="tool-header"><i class="fas fa-share-alt"></i> Social Preview</div>
+            <div class="input-group">
+                <input type="url" id="socialUrl" placeholder="https://example.com" />
+                <button class="btn" id="socialBtn"><span class="btn-text">Generate Preview</span><span class="spinner"></span></button>
+            </div>
+            <div class="status" id="socialStatus"></div>
+            <div class="result-box" id="socialResult"><div class="empty-hint"><i class="fas fa-share-alt"></i> Enter a URL and click "Generate Preview"</div></div>
+        </div>
+
+        <!-- HEADERS CHECK -->
+        <div class="tool-panel" id="headersPanel">
+            <div class="tool-header"><i class="fas fa-server"></i> HTTP Headers Check</div>
+            <div class="input-group">
+                <input type="url" id="headersUrl" placeholder="https://example.com" />
+                <button class="btn" id="headersBtn"><span class="btn-text">Check Headers</span><span class="spinner"></span></button>
+            </div>
+            <div class="status" id="headersStatus"></div>
+            <div class="result-box" id="headersResult"><div class="empty-hint"><i class="fas fa-server"></i> Enter a URL and click "Check Headers"</div></div>
+            <div class="result-actions">
+                <button class="btn btn-outline" id="headersCopy"><i class="fas fa-copy"></i> Copy</button>
+            </div>
+        </div>
+
+        <!-- SEO ANALYZER -->
+        <div class="tool-panel" id="seoPanel">
+            <div class="tool-header"><i class="fas fa-search"></i> SEO Meta Analyzer</div>
+            <div class="input-group">
+                <input type="url" id="seoUrl" placeholder="https://example.com" />
+                <button class="btn" id="seoBtn"><span class="btn-text">Analyze SEO</span><span class="spinner"></span></button>
+            </div>
+            <div class="status" id="seoStatus"></div>
+            <div class="result-box" id="seoResult"><div class="empty-hint"><i class="fas fa-search"></i> Enter a URL and click "Analyze SEO"</div></div>
+        </div>
+
+    </div>
+
+    <!-- ─── TOAST ─── -->
+    <div class="toast" id="toast"><i class="fas fa-check-circle"></i> <span id="toastMsg"></span></div>
+
+    <!-- ─── JAVASCRIPT ─── -->
+    <script>
+        (function() {
+            'use strict';
+
+            // ── DOM refs ──
+            const homeSection = document.getElementById('homeSection');
+            const panels = {
+                source: document.getElementById('sourcePanel'),
+                social: document.getElementById('socialPanel'),
+                headers: document.getElementById('headersPanel'),
+                seo: document.getElementById('seoPanel')
+            };
+            const navLinks = document.querySelectorAll('[data-tool]');
+            const hamburger = document.getElementById('hamburgerBtn');
+            const sidebar = document.getElementById('sidebar');
+            const closeSidebar = document.getElementById('closeSidebar');
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMsg');
+
+            // ── MULTI-PROXY SYSTEM ──
+            const PROXIES = [
+                'https://api.allorigins.win/raw?url=',
+                'https://corsproxy.io/?url=',
+                'https://thingproxy.freeboard.io/fetch/'
+            ];
+
+            // Timeout per request (ms)
+            const REQUEST_TIMEOUT = 20000; // 20s
+
+            function normalizeUrl(url) {
+                url = url.trim();
+                if (!url) return '';
+                if (!/^https?:\/\//i.test(url)) {
+                    url = 'https://' + url;
+                }
+                return url;
+            }
+
+            function showToast(msg, icon = 'fa-check-circle') {
+                const iconEl = toast.querySelector('i');
+                if (iconEl) iconEl.className = 'fas ' + icon;
+                toastMsg.textContent = msg;
+                toast.classList.add('show');
+                clearTimeout(toast._t);
+                toast._t = setTimeout(() => toast.classList.remove('show'), 3500);
+            }
+
+            function setStatus(el, msg, type) {
+                el.textContent = msg;
+                el.className = 'status';
+                if (type) el.classList.add(type);
+            }
+
+            function setResult(el, content) {
+                if (!content || content.trim() === '') {
+                    el.innerHTML = '<div class="empty-hint"><i class="fas fa-exclamation-circle"></i> No data returned — the server might be blocking the request.</div>';
+                    return;
+                }
+                el.textContent = content;
+            }
+
+            function setLoading(btn, loading) {
+                if (loading) {
+                    btn.classList.add('loading');
+                    btn.disabled = true;
+                } else {
+                    btn.classList.remove('loading');
+                    btn.disabled = false;
+                }
+            }
+
+            // ── Core fetch with proxy fallback ──
+            async function fetchWithFallback(url, type = 'text') {
+                const encoded = encodeURIComponent(url);
+                let lastError = null;
+
+                for (const proxy of PROXIES) {
+                    try {
+                        const target = proxy + encoded;
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+                        const response = await fetch(target, {
+                            signal: controller.signal,
+                            headers: {
+                                'Accept': type === 'json' ? 'application/json' : 'text/html,text/plain,*/*'
+                            }
+                        });
+
+                        clearTimeout(timeoutId);
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status} — ${response.statusText}`);
+                        }
+
+                        if (type === 'json') {
+                            return await response.json();
+                        } else {
+                            return await response.text();
+                        }
+                    } catch (err) {
+                        lastError = err;
+                        // continue to next proxy
+                        continue;
+                    }
+                }
+
+                // All proxies failed
+                throw new Error(`All proxies failed. Last error: ${lastError?.message || 'Unknown'}`);
+            }
+
+            // ── Navigation ──
+            function setActiveTool(tool) {
+                homeSection.style.display = 'none';
+                Object.values(panels).forEach(p => p.classList.remove('active'));
+
+                if (tool === 'home') {
+                    homeSection.style.display = '';
+                } else if (panels[tool]) {
+                    panels[tool].classList.add('active');
+                }
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.dataset.tool === tool) link.classList.add('active');
+                });
+
+                sidebar.classList.remove('open');
+                hamburger.classList.remove('active');
+            }
+
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    setActiveTool(link.dataset.tool);
+                });
+            });
+
+            document.querySelectorAll('.tool-card').forEach(card => {
+                card.addEventListener('click', () => setActiveTool(card.dataset.tool));
+            });
+
+            hamburger.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+                hamburger.classList.toggle('active');
+            });
+            closeSidebar.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                hamburger.classList.remove('active');
+            });
+
+            // ── SOURCE VIEWER ──
+            const sourceBtn = document.getElementById('sourceBtn');
+            const sourceUrl = document.getElementById('sourceUrl');
+            const sourceStatus = document.getElementById('sourceStatus');
+            const sourceResult = document.getElementById('sourceResult');
+
+            sourceBtn.addEventListener('click', async () => {
+                const url = normalizeUrl(sourceUrl.value);
+                if (!url) {
+                    showToast('Please enter a valid URL', 'fa-exclamation-circle');
+                    return;
+                }
+                setLoading(sourceBtn, true);
+                setStatus(sourceStatus, '⏳ Fetching source using multiple proxies…', '');
+                try {
+                    const html = await fetchWithFallback(url, 'text');
+                    if (html.length < 50) {
+                        setResult(sourceResult, '⚠️ Fetched content is very short. The site might block automated requests or be empty.');
+                        setStatus(sourceStatus, '⚠️ Partial content (very short)', 'warning');
+                    } else {
+                        setResult(sourceResult, html);
+                        setStatus(sourceStatus, '✅ Source fetched successfully (' + html.length + ' chars)', 'success');
+                        showToast('Source fetched!', 'fa-check-circle');
+                    }
+                } catch (err) {
+                    setResult(sourceResult, '');
+                    setStatus(sourceStatus, '❌ ' + err.message, 'error');
+                    showToast('Fetch failed: ' + err.message, 'fa-exclamation-circle');
+                } finally {
+                    setLoading(sourceBtn, false);
+                }
+            });
+
+            document.getElementById('sourceCopy').addEventListener('click', () => {
+                const text = sourceResult.textContent;
+                if (!text || text.includes('Enter a URL') || text.includes('No data returned')) {
+                    showToast('Nothing to copy', 'fa-exclamation-circle');
+                    return;
+                }
+                navigator.clipboard.writeText(text).then(() => showToast('Copied!')).catch(() => showToast('Copy failed',
+                    'fa-exclamation-circle'));
+            });
+
+            document.getElementById('sourceDownload').addEventListener('click', () => {
+                const text = sourceResult.textContent;
+                if (!text || text.includes('Enter a URL') || text.includes('No data returned')) {
+                    showToast('Nothing to download', 'fa-exclamation-circle');
+                    return;
+                }
+                const blob = new Blob([text], { type: 'text/html' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'page-source.html';
+                a.click();
+                URL.revokeObjectURL(a.href);
+                showToast('Downloaded!', 'fa-check-circle');
+            });
+
+            // ── SOCIAL PREVIEW ──
+            const socialBtn = document.getElementById('socialBtn');
+            const socialUrl = document.getElementById('socialUrl');
+            const socialStatus = document.getElementById('socialStatus');
+            const socialResult = document.getElementById('socialResult');
+
+            socialBtn.addEventListener('click', async () => {
+                const url = normalizeUrl(socialUrl.value);
+                if (!url) {
+                    showToast('Please enter a valid URL', 'fa-exclamation-circle');
+                    return;
+                }
+                setLoading(socialBtn, true);
+                setStatus(socialStatus, '⏳ Generating preview…', '');
+                try {
+                    const html = await fetchWithFallback(url, 'text');
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+                    const title = doc.querySelector('title')?.textContent?.trim() || '';
+                    const desc = doc.querySelector('meta[name="description"]')?.getAttribute('content')?.trim() || '';
+                    const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim() ||
+                        title || '(no title)';
+                    const ogDesc = doc.querySelector('meta[property="og:description"]')?.getAttribute('content')?.trim() ||
+                        desc || '(no description)';
+                    const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content')?.trim() || '';
+                    const ogSite = doc.querySelector('meta[property="og:site_name"]')?.getAttribute('content')?.trim() || '';
+                    const ogUrl = doc.querySelector('meta[property="og:url"]')?.getAttribute('content')?.trim() || url;
+
+                    let preview = '';
+                    preview += '📌 Title: ' + (ogTitle || '❌ Not found') + '\n';
+                    preview += '📝 Description: ' + (ogDesc || '❌ Not found') + '\n';
+                    if (ogSite) preview += '🏷️ Site: ' + ogSite + '\n';
+                    preview += '🖼️ Image: ' + (ogImage || '❌ Not found') + '\n';
+                    preview += '🔗 URL: ' + ogUrl;
+
+                    setResult(socialResult, preview);
+                    setStatus(socialStatus, '✅ Social preview generated', 'success');
+                    showToast('Preview ready!', 'fa-check-circle');
+                } catch (err) {
+                    setResult(socialResult, '');
+                    setStatus(socialStatus, '❌ ' + err.message, 'error');
+                    showToast('Preview failed: ' + err.message, 'fa-exclamation-circle');
+                } finally {
+                    setLoading(socialBtn, false);
+                }
+            });
+
+            // ── HEADERS CHECK ──
+            const headersBtn = document.getElementById('headersBtn');
+            const headersUrl = document.getElementById('headersUrl');
+            const headersStatus = document.getElementById('headersStatus');
+            const headersResult = document.getElementById('headersResult');
+
+            headersBtn.addEventListener('click', async () => {
+                const url = normalizeUrl(headersUrl.value);
+                if (!url) {
+                    showToast('Please enter a valid URL', 'fa-exclamation-circle');
+                    return;
+                }
+                setLoading(headersBtn, true);
+                setStatus(headersStatus, '⏳ Fetching headers…', '');
+                try {
+                    // For headers, we use the JSON proxy to get headers info
+                    const encoded = encodeURIComponent(url);
+                    const proxy = PROXIES[0]; // first proxy
+                    const target = proxy + encoded;
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+
+                    const response = await fetch(target, {
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+
+                    // Get all headers from the response
+                    const headers = {};
+                    response.headers.forEach((value, key) => {
+                        headers[key] = value;
+                    });
+
+                    let lines = '';
+                    for (const [key, val] of Object.entries(headers)) {
+                        lines += key + ': ' + val + '\n';
+                    }
+                    if (!lines) lines = '⚠️ No headers returned.';
+
+                    // Also get status
+                    const statusLine = 'Status: ' + response.status + ' ' + response.statusText + '\n';
+                    setResult(headersResult, statusLine + lines);
+                    setStatus(headersStatus, '✅ Headers retrieved (' + Object.keys(headers).length + ' entries)',
+                    'success');
+                    showToast('Headers fetched!', 'fa-check-circle');
+                } catch (err) {
+                    setResult(headersResult, '');
+                    setStatus(headersStatus, '❌ ' + err.message, 'error');
+                    showToast('Headers failed: ' + err.message, 'fa-exclamation-circle');
+                } finally {
+                    setLoading(headersBtn, false);
+                }
+            });
+
+            document.getElementById('headersCopy').addEventListener('click', () => {
+                const text = headersResult.textContent;
+                if (!text || text.includes('Enter a URL') || text.includes('No data returned')) {
+                    showToast('Nothing to copy', 'fa-exclamation-circle');
+                    return;
+                }
+                navigator.clipboard.writeText(text).then(() => showToast('Copied!')).catch(() => showToast('Copy failed',
+                    'fa-exclamation-circle'));
+            });
+
+            // ── SEO ANALYZER ──
+            const seoBtn = document.getElementById('seoBtn');
+            const seoUrl = document.getElementById('seoUrl');
+            const seoStatus = document.getElementById('seoStatus');
+            const seoResult = document.getElementById('seoResult');
+
+            seoBtn.addEventListener('click', async () => {
+                const url = normalizeUrl(seoUrl.value);
+                if (!url) {
+                    showToast('Please enter a valid URL', 'fa-exclamation-circle');
+                    return;
+                }
+                setLoading(seoBtn, true);
+                setStatus(seoStatus, '⏳ Analyzing SEO…', '');
+                try {
+                    const html = await fetchWithFallback(url, 'text');
+                    const doc = new DOMParser().parseFromString(html, 'text/html');
+
+                    const title = doc.querySelector('title')?.textContent?.trim() || '❌ Not found';
+                    const desc = doc.querySelector('meta[name="description"]')?.getAttribute('content')?.trim() ||
+                        '❌ Not found';
+                    const canonical = doc.querySelector('link[rel="canonical"]')?.getAttribute('href')?.trim() ||
+                        '❌ Not found';
+                    const ogTitle = doc.querySelector('meta[property="og:title"]')?.getAttribute('content')?.trim() ||
+                        '❌ Not found';
+                    const ogDesc = doc.querySelector('meta[property="og:description"]')?.getAttribute('content')?.trim() ||
+                        '❌ Not found';
+                    const ogImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content')?.trim() ||
+                        '❌ Not found';
+                    const viewport = doc.querySelector('meta[name="viewport"]')?.getAttribute('content')?.trim() ||
+                        '❌ Not found';
+                    const robots = doc.querySelector('meta[name="robots"]')?.getAttribute('content')?.trim() ||
+                        '❌ Not found';
+
+                    let out = '';
+                    out += '📌 Title: ' + title + '\n';
+                    out += '📝 Description: ' + desc + '\n';
+                    out += '🔗 Canonical: ' + canonical + '\n';
+                    out += '📢 OG Title: ' + ogTitle + '\n';
+                    out += '📢 OG Description: ' + ogDesc + '\n';
+                    out += '🖼️ OG Image: ' + ogImage + '\n';
+                    out += '📱 Viewport: ' + viewport + '\n';
+                    out += '🤖 Robots: ' + robots;
+
+                    setResult(seoResult, out);
+                    setStatus(seoStatus, '✅ SEO analysis complete', 'success');
+                    showToast('SEO analysis done!', 'fa-check-circle');
+                } catch (err) {
+                    setResult(seoResult, '');
+                    setStatus(seoStatus, '❌ ' + err.message, 'error');
+                    showToast('SEO failed: ' + err.message, 'fa-exclamation-circle');
+                } finally {
+                    setLoading(seoBtn, false);
+                }
+            });
+
+            // ── Initial state ──
+            setActiveTool('home');
+
+            // ── Enter key support ──
+            function addEnterSupport(inputId, btnId) {
+                const inp = document.getElementById(inputId);
+                const btn = document.getElementById(btnId);
+                if (inp && btn) {
+                    inp.addEventListener('keydown', (e) => {
+                        if (e.key === 'Enter') btn.click();
+                    });
+                }
+            }
+            addEnterSupport('sourceUrl', 'sourceBtn');
+            addEnterSupport('socialUrl', 'socialBtn');
+            addEnterSupport('headersUrl', 'headersBtn');
+            addEnterSupport('seoUrl', 'seoBtn');
+
+        })();
+    </script>
 </body>
 </html>
